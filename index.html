@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FİX-D AI Interface</title>
+    <!-- Google Fonts & FontAwesome Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        /* ==========================================================================
+           1. GENEL DEĞİŞKENLER VE TEMA (DARK / GLASSMORPHISM)
+           ========================================================================== */
+        :root {
+            --bg-primary: #0b0c10;
+            --bg-secondary: #12141c;
+            --bg-sidebar: #07080b;
+            --bg-glass: rgba(18, 20, 28, 0.7);
+            --border-glass: rgba(255, 255, 255, 0.08);
+            
+            --accent-primary: #8a2be2; /* Neon Mor */
+            --accent-secondary: #00f0ff; /* Neon Mavi */
+            --accent-gradient: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --text-dark: #0f172a;
+
+            --user-msg-bg: linear-gradient(135deg, #6366f1, #8b5cf6);
+            --ai-msg-bg: rgba(30, 41, 59, 0.7);
+            
+            --sidebar-width: 260px;
+            --header-height: 60px;
+            --transition-speed: 0.3s;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-main);
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
+        }
+
+        /* Scrollbar Tasarımı */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        /* ==========================================================================
+           2. LAYOUT & SIDEBAR
+           ========================================================================== */
+        .app-container {
+            display: flex;
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+        }
+
+        .sidebar {
+            width: var(--sidebar-width);
+            background-color: var(--bg-sidebar);
+            border-right: 1px solid var(--border-glass);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: transform var(--transition-speed) ease;
+            z-index: 100;
+        }
+
+        .sidebar-header {
+            padding: 15px;
+        }
+
+        .btn-new-chat {
+            width: 100%;
+            padding: 12px;
+            background: var(--accent-gradient);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: opacity 0.2s;
+            box-shadow: 0 4px 15px rgba(138, 43, 226, 0.3);
+        }
+
+        .btn-new-chat:hover {
+            opacity: 0.9;
+        }
+
+        .chat-history {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px 15px;
+        }
+
+        .history-item {
+            padding: 10px 12px;
+            margin-bottom: 6px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+
+        .history-item:hover, .history-item.active {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-main);
+        }
+
+        .history-item.active {
+            border-left: 3px solid var(--accent-secondary);
+        }
+
+        .history-title {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 170px;
+        }
+
+        .history-actions {
+            display: none;
+            gap: 5px;
+        }
+
+        .history-item:hover .history-actions {
+            display: flex;
+        }
+
+        .history-action-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 2px 4px;
+        }
+
+        .history-action-btn:hover {
+            color: #ef4444;
+        }
+
+        .sidebar-user {
+            padding: 15px;
+            border-top: 1px solid var(--border-glass);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.85rem;
+        }
+
+        .user-avatar {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            background: var(--accent-gradient);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        /* ==========================================================================
+           3. MAIN CONTENT (HEADER & CHAT AREA)
+           ========================================================================== */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-primary);
+            position: relative;
+        }
+
+        .top-bar {
+            height: var(--header-height);
+            border-bottom: 1px solid var(--border-glass);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            background: var(--bg-glass);
+            backdrop-filter: blur(10px);
+        }
+
+        .top-bar-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logo {
+            font-size: 1.2rem;
+            font-weight: 700;
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: 1px;
+        }
+
+        .mode-selector {
+            display: flex;
+            background: rgba(0, 0, 0, 0.4);
+            padding: 4px;
+            border-radius: 8px;
+            border: 1px solid var(--border-glass);
+        }
+
+        .mode-btn {
+            padding: 6px 12px;
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .mode-btn.active {
+            background: var(--accent-primary);
+            color: white;
+            font-weight: 600;
+        }
+
+        .btn-icon {
+            background: transparent;
+            border: none;
+            color: var(--text-main);
+            font-size: 1.1rem;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 8px;
+            transition: background 0.2s;
+        }
+
+        .btn-icon:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        /* Chat Body */
+        .chat-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .welcome-screen {
+            margin: auto;
+            text-align: center;
+            max-width: 500px;
+            opacity: 0.8;
+        }
+
+        .welcome-logo {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .message {
+            display: flex;
+            gap: 12px;
+            max-width: 80%;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message.user {
+            margin-left: auto;
+            flex-direction: row-reverse;
+        }
+
+        .message-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            flex-shrink: 0;
+        }
+
+        .message.user .message-avatar {
+            background: var(--user-msg-bg);
+        }
+
+        .message.ai .message-avatar {
+            background: var(--accent-gradient);
+        }
+
+        .message-content {
+            background: var(--ai-msg-bg);
+            padding: 12px 16px;
+            border-radius: 12px;
+            border: 1px solid var(--border-glass);
+            font-size: 0.95rem;
+            line-height: 1.5;
+            position: relative;
+        }
+
+        .message.user .message-content {
+            background: var(--user-msg-bg);
+            border: none;
+            border-bottom-right-radius: 2px;
+        }
+
+        .message.ai .message-content {
+            border-bottom-left-radius: 2px;
+        }
+
+        /* Code Blocks */
+        .code-block {
+            background: #050508;
+            border-radius: 6px;
+            margin: 10px 0;
+            overflow: hidden;
+            border: 1px solid var(--border-glass);
+        }
+
+        .code-header {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 6px 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .copy-code-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 0.75rem;
+        }
+
+        .copy-code-btn:hover {
+            color: var(--text-main);
+        }
+
+        pre code {
+            display: block;
+            padding: 12px;
+            overflow-x: auto;
+            font-family: monospace;
+            font-size: 0.85rem;
+            color: #38bdf8;
+        }
+
+        /* Input Area */
+        .input-container {
+            padding: 15px 20px;
+            background: var(--bg-glass);
+            backdrop-filter: blur(10px);
+            border-top: 1px solid var(--border-glass);
+        }
+
+        .composer {
+            display: flex;
+            align-items: flex-end;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-glass);
+            border-radius: 12px;
+            padding: 8px 12px;
+            gap: 10px;
+            transition: border-color 0.2s;
+        }
+
+        .composer:focus-within {
+            border-color: var(--accent-primary);
+        }
+
+        .composer textarea {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: var(--text-main);
+            font-size: 0.95rem;
+            resize: none;
+            max-height: 120px;
+            outline: none;
+        }
+
+        .btn-send {
+            background: var(--accent-gradient);
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.1s;
+        }
+
+        .btn-send:active {
+            transform: scale(0.95);
+        }
+
+        /* ==========================================================================
+           4. MODAL & SETTINGS
+           ========================================================================== */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+            z-index: 200;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: var(--bg-secondary);
+            width: 90%;
+            max-width: 450px;
+            border-radius: 16px;
+            border: 1px solid var(--border-glass);
+            padding: 20px;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .setting-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border-glass);
+        }
+
+        /* Toggle Switch */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 40px;
+            height: 22px;
+        }
+
+        .switch input { opacity: 0; width: 0; height: 0; }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #334155;
+            transition: .3s;
+            border-radius: 22px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .3s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background: var(--accent-primary);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(18px);
+        }
+
+        /* Toast Bildirimi */
+        .toast {
+            position: fixed;
+            bottom: 80px;
+            right: 20px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--accent-secondary);
+            color: var(--text-main);
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            display: none;
+            z-index: 300;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+        }
+
+        /* Responsive Kuralları */
+        @media (max-width: 768px) {
+            .sidebar {
+                position: absolute;
+                height: 100%;
+                transform: translateX(-100%);
+            }
+            .sidebar.open {
+                transform: translateX(0);
+            }
+            .message {
+                max-width: 90%;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <!-- 1. SOL SIDEBAR -->
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <button class="btn-new-chat" id="btn-new-chat">
+                    <i class="fa-solid fa-plus"></i> Yeni Sohbet
+                </button>
+            </div>
+
+            <div class="chat-history" id="chat-history">
+                <!-- Sohbet Geçmişi JS Tarafından Yüklenecek -->
+            </div>
+
+            <div class="sidebar-user">
+                <div class="user-avatar">F</div>
+                <div>
+                    <div style="font-weight: 600;">Geliştirici Profil</div>
+                    <div style="color: var(--text-muted); font-size: 0.75rem;">FİX-D Local Host</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. ANA CHAT ALANI VE ÜST BAR -->
+        <div class="main-content">
+            <div class="top-bar">
+                <div class="top-bar-left">
+                    <button class="btn-icon" id="btn-toggle-sidebar">
+                        <i class="fa-solid fa-bars"></i>
+                    </button>
+                    <div class="logo">FİX-D</div>
+                </div>
+
+                <!-- 6. MOD DEĞİŞTİRME -->
+                <div class="mode-selector">
+                    <button class="mode-btn active" id="mode-ind" onclick="setMode('independent')">
+                        Independent AI
+                    </button>
+                    <button class="mode-btn" id="mode-hyb" onclick="setMode('hybrid')">
+                        Hybrid AI
+                    </button>
+                </div>
+
+                <button class="btn-icon" id="btn-open-settings">
+                    <i class="fa-solid fa-gear"></i>
+                </button>
+            </div>
+
+            <!-- CHAT MESAJLARI -->
+            <div class="chat-container" id="chat-container">
+                <div class="welcome-screen" id="welcome-screen">
+                    <div class="welcome-logo">FİX-D</div>
+                    <h2>Hoş Geldin, Kanka!</h2>
+                    <p style="margin-top: 8px; color: var(--text-muted); font-size: 0.9rem;">
+                        Arayüz şu an hazır. Colab tünelin (Ngrok) açık olduğunda mesajlar doğrudan senin modeline gidecek.
+                    </p>
+                </div>
+            </div>
+
+            <!-- 4. MESAJ GİRİŞ ALANI -->
+            <div class="input-container">
+                <div class="composer">
+                    <textarea id="chat-input" rows="1" placeholder="FİX-D modeline bir şeyler yaz..."></textarea>
+                    <button class="btn-send" id="btn-send">
+                        <i class="fa-solid fa-paper-plane" id="send-icon"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 7. AYARLAR MODALI -->
+    <div class="modal" id="settings-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Ayarlar</h3>
+                <button class="btn-icon" id="btn-close-settings"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <div class="setting-row">
+                <span>Enter ile Gönder</span>
+                <label class="switch">
+                    <input type="checkbox" id="setting-enter-send" checked>
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <div class="setting-row">
+                <span>Sohbet Geçmişini Temizle</span>
+                <button style="background: #ef4444; border:none; color:white; padding:6px 12px; border-radius:6px; cursor:pointer;" onclick="clearAllHistory()">Temizle</button>
+            </div>
+
+            <div class="setting-row" style="font-size: 0.8rem; color: var(--text-muted); flex-direction:column; align-items:flex-start; gap:5px;">
+                <div>Sürüm: FİX-D v1.0 (Local Engine)</div>
+                <div>Durum: Colab Bağlantısı Bekleniyor</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST BİLDİRİMİ -->
+    <div class="toast" id="toast">İşlem Başarılı!</div>
+
+    <!-- ==========================================================================
+       JAVASCRIPT / MİMARİ VE COLAB BAĞLANTI SİSTEMİ
+       ========================================================================== -->
+    <script>
+        /* ==========================================================================
+           9. COLAB / NGROK KONFİGÜRASYON ALANI
+           ========================================================================== */
+        const FIXD_CONFIG = {
+            // Buraya Colab'de Ngrok çalıştıktan sonra sana verilen URL'yi koyacaksın.
+            // Örnek: "https://1234-56-78.ngrok-free.app"
+            endpoint: "http://l
